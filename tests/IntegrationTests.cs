@@ -134,6 +134,7 @@ namespace QuotaPeek.Windows
                 controller.ShowDashboard();
                 True(dashboard.Visible, "tray action reopens dashboard");
                 await VerifyTrayToggleAsync(controller, dashboard);
+                await VerifySecondLaunchShowsFlyoutAsync(controller, dashboard);
                 VerifyManySlots(controller, dashboard);
                 VerifyProfilesMustBeArray();
 
@@ -239,6 +240,25 @@ namespace QuotaPeek.Windows
             await Task.Delay(600);
             TrayPress(controller, "TrayIconMouseClick");
             True(dashboard.Visible, "long tray press opens a closed flyout");
+        }
+
+        private static async Task VerifySecondLaunchShowsFlyoutAsync(AppController controller, DashboardForm dashboard)
+        {
+            var name = @"Local\QuotaPeek.IntegrationTest." + Guid.NewGuid().ToString("N");
+            using (var primary = new SingleInstance(name))
+            {
+                True(primary.IsPrimary, "first launch owns the instance");
+                primary.ListenForShowRequests(controller.RequestShowDashboard);
+                dashboard.HideFlyout();
+                await Task.Delay(400);
+                using (var second = new SingleInstance(name))
+                {
+                    True(!second.IsPrimary, "second launch detects the running instance");
+                    True(second.SignalPrimary(), "second launch reaches the running instance");
+                }
+                for (var waited = 0; waited < 3000 && !dashboard.Visible; waited += 50) await Task.Delay(50);
+                True(dashboard.Visible, "second launch shows the quota flyout");
+            }
         }
 
         private static void VerifyManySlots(AppController controller, DashboardForm dashboard)

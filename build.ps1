@@ -43,6 +43,7 @@ $applicationArguments = @(
     '/debug:pdbonly',
     "/out:$applicationPath",
     "/win32manifest:$(Join-Path $windowsRoot 'app.manifest')",
+    "/win32icon:$(Join-Path $windowsRoot 'assets\QuotaPeek.ico')",
     "/reference:$netHttp"
 ) + $sourceFiles
 

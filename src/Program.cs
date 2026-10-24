@@ -14,13 +14,16 @@ namespace QuotaPeek.Windows
         [STAThread]
         private static void Main(string[] args)
         {
-            bool created;
-            using (var instance = new Mutex(true, @"Local\QuotaPeek.Windows", out created))
+            using (var instance = new SingleInstance())
             {
-                if (!created)
+                if (!instance.IsPrimary)
                 {
-                    MessageBox.Show("QuotaPeek 已在运行，请点击任务栏通知区域中的额度图标。", "QuotaPeek",
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    // Already running: bring up its quota flyout instead of starting a second copy.
+                    if (!instance.SignalPrimary())
+                    {
+                        MessageBox.Show("QuotaPeek 已在运行，请点击任务栏通知区域中的额度图标。", "QuotaPeek",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
                     return;
                 }
 
@@ -32,6 +35,7 @@ namespace QuotaPeek.Windows
                     Application.SetCompatibleTextRenderingDefault(false);
                     using (var controller = new AppController(args))
                     {
+                        instance.ListenForShowRequests(controller.RequestShowDashboard);
                         Application.Run(controller);
                     }
                 }

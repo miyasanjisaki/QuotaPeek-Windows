@@ -182,6 +182,20 @@ namespace QuotaPeek.Windows
             }
         }
 
+        /// <summary>Thread-safe request to show the flyout, used when QuotaPeek is launched again.</summary>
+        public void RequestShowDashboard()
+        {
+            if (_exiting) return;
+            try
+            {
+                _uiDispatcher.BeginInvoke((Action)delegate { if (!_exiting) ShowDashboard(); });
+            }
+            catch (InvalidOperationException)
+            {
+                // The dispatcher is gone because QuotaPeek is shutting down.
+            }
+        }
+
         public void ShowDashboard()
         {
             if (_dashboard == null || _dashboard.IsDisposed) _dashboard = new DashboardForm(this);
